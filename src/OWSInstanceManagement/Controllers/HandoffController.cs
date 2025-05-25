@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OWSInstanceManagement.Requests.Instance; // Or .Requests.Handoff
 using OWSData.Repositories.Interfaces;
+using OWSData.Models.StoredProcs; // For GetCharByCharName
 using OWSShared.Interfaces;
 using OWSShared.Messages; // For MQPrepareToReceivePlayerMessage
 using RabbitMQ.Client; // Required for publishing
@@ -20,6 +21,7 @@ namespace OWSInstanceManagement.Controllers
     public class HandoffController : ControllerBase 
     {
         private readonly IInstanceManagementRepository _instanceManagementRepository;
+        private readonly ICharactersRepository _charactersRepository;
         private readonly IHeaderCustomerGUID _customerGuid;
         private readonly IConnection _rabbitConnection; 
         private readonly RabbitMQOptions _rabbitMQOptions;
@@ -27,11 +29,13 @@ namespace OWSInstanceManagement.Controllers
 
         public HandoffController(
             IInstanceManagementRepository instanceManagementRepository,
+            ICharactersRepository charactersRepository,
             IHeaderCustomerGUID customerGuid,
             IOptions<RabbitMQOptions> rabbitMQOptionsAccessor,
             ILogger logger) 
         {
             _instanceManagementRepository = instanceManagementRepository;
+            _charactersRepository = charactersRepository;
             _customerGuid = customerGuid;
             _rabbitMQOptions = rabbitMQOptionsAccessor.Value; 
             _logger = logger;
@@ -110,10 +114,30 @@ namespace OWSInstanceManagement.Controllers
                         SourceWorldServerID = request.SourceWorldServerID,
                         SourceServerS2SEndpoint = sourceWorldServerInfo.S2SEndpoint, 
                         TargetGridCellID = request.TargetGridCellID,
-                        CharacterBaseline = null // TODO: Populate with actual baseline data from ICharactersRepository if needed.
-                                                 // Example: var charData = await _charactersRepository.GetCharByCharName(request.CharacterName, request.PlayerUserSessionGUID);
-                                                 // then map relevant fields to CharacterBaselineDataForHandoff.
+                        CharacterBaseline = null 
                     };
+                    
+                    // Populate CharacterBaseline
+                    GetCharByCharName charData = await _charactersRepository.GetCharByCharName(customerGUID, request.CharacterName);
+                    if (charData != null)
+                    {
+                        message.CharacterBaseline = new CharacterBaselineDataForHandoff
+                        {
+                            CharacterName = charData.CharName,
+                            ClassName = charData.ClassName,
+                            CharacterLevel = charData.CharacterLevel,
+                            MapName = charData.MapName,
+                            MaxHealth = charData.MaxHealth,
+                            MaxMana = charData.MaxMana,
+                            MaxEnergy = charData.MaxEnergy,
+                            MaxStamina = charData.MaxStamina
+                        };
+                        _logger.Information("CharacterBaseline populated for {CharacterName}", request.CharacterName);
+                    }
+                    else
+                    {
+                        _logger.Warning("Could not retrieve character data for Character: {CharacterName}. Proceeding with null CharacterBaseline.", request.CharacterName);
+                    }
 
                     var body = JsonSerializer.SerializeToUtf8Bytes(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
                     var properties = channel.CreateBasicProperties();

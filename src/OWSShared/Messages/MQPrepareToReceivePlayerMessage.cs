@@ -5,8 +5,13 @@ using System;
 // For simplicity, let's define a minimal one here.
 public class CharacterBaselineDataForHandoff {
     public string CharacterName { get; set; }
-    public string ClassName {get; set;} // Example field
-    // Add other key persisted fields S_Tgt might need early
+    public string ClassName {get; set;}
+    public short CharacterLevel { get; set; }
+    public string MapName { get; set; }
+    public double MaxHealth { get; set; }
+    public double MaxMana { get; set; }
+    public double MaxEnergy { get; set; }
+    public double MaxStamina { get; set; }
 }
 
 namespace OWSShared.Messages
