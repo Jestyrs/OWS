@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -54,82 +54,57 @@ namespace OWSInstanceManagement.Controllers
         [HttpPost]
         [Route("SetZoneInstanceStatus")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> SetZoneInstanceStatusRequest([FromBody] SetZoneInstanceStatusRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("ShutDownServerInstance")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> ShutDownServerInstance([FromBody] ShutDownServerInstanceRequest request)
         {
             request.SetData(_rabbitMQOptions, _instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("RegisterLauncher")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<SuccessAndErrorMessage> RegisterLauncher([FromBody] RegisterInstanceLauncherRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("SpinUpServerInstance")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> SpinUpServerInstance([FromBody] SpinUpServerInstanceRequest request)
         {
             request.SetData(_rabbitMQOptions, _charactersRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpGet]
         [Route("StartInstanceLauncher")]
         [Produces(typeof(int))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> StartInstanceLauncher()
         {
             StartInstanceLauncherRequest request = new StartInstanceLauncherRequest();
-
             var launcherGuid = Request.Headers["X-LauncherGUID"].FirstOrDefault();
             if (string.IsNullOrEmpty(launcherGuid))
             {
                 Log.Error("Http Header X-LauncherGUID is empty!");
             }
-
             request.SetData(_instanceManagementRepository, launcherGuid, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("ShutDownInstanceLauncher")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> ShutDownInstanceLauncher([FromBody] ShutDownInstanceLauncherRequest request)
         {
             var launcherGuid = Request.Headers["X-LauncherGUID"].FirstOrDefault();
@@ -137,31 +112,19 @@ namespace OWSInstanceManagement.Controllers
             {
                 Log.Error("Http Header X-LauncherGUID is empty!");
             }
-
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("GetServerToConnectTo")]
         [Produces(typeof(JoinMapByCharName))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> GetServerToConnectToRequest([FromBody] GetServerToConnectToRequest request)
         {
             request.SetData(_charactersRepository, _customerGuid);
-
             return await request.Handle();
         }
 
-        /// <summary>
-        /// GetZoneInstance
-        /// </summary>
-        /// <remarks>
-        /// Get information on the server instance that matches the ZoneInstanceId in the POST data
-        /// </remarks>
         [HttpPost]
         [Route("GetZoneInstance")]
         [Produces(typeof(GetServerInstanceFromPort))]
@@ -174,39 +137,27 @@ namespace OWSInstanceManagement.Controllers
         [HttpPost]
         [Route("GetServerInstanceFromPort")]
         [Produces(typeof(GetServerInstanceFromPort))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<GetServerInstanceFromPort> GetServerInstanceFromPort([FromBody] GetServerInstanceFromPortRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid, Request.HttpContext.Connection.RemoteIpAddress.ToString());
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("GetZoneInstancesForWorldServer")]
         [Produces(typeof(IEnumerable<GetZoneInstancesForWorldServer>))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> GetZoneInstancesForWorldServer([FromBody] GetZoneInstancesForWorldServerRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
         [HttpPost]
         [Route("UpdateNumberOfPlayers")]
         [Produces(typeof(SuccessAndErrorMessage))]
-        /*[SwaggerOperation("ByName")]
-        [SwaggerResponse(200)]
-        [SwaggerResponse(404)]*/
         public async Task<IActionResult> UpdateNumberOfPlayers([FromBody] UpdateNumberOfPlayersRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
@@ -216,7 +167,6 @@ namespace OWSInstanceManagement.Controllers
         public async Task<IActionResult> GetZoneInstancesForZone([FromBody] GetZoneInstancesForZoneRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
         }
 
@@ -226,8 +176,63 @@ namespace OWSInstanceManagement.Controllers
         public async Task<IActionResult> GetCurrentWorldTime([FromBody] GetCurrentWorldTimeRequest request)
         {
             request.SetData(_instanceManagementRepository, _customerGuid);
-
             return await request.Handle();
+        }
+
+        // Grid Management Endpoints
+        [HttpPost]
+        [Route("Grid/AssignCell")]
+        [Produces(typeof(SuccessAndErrorMessage))]
+        public async Task<IActionResult> AssignGridCell([FromBody] AssignGridCellRequest request)
+        {
+            var result = await _instanceManagementRepository.AssignGridCellToWorldServer(_customerGuid.CustomerGUID, request.CellID, request.WorldServerID, request.MapInstanceID);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("Grid/ClearCellAssignment")]
+        [Produces(typeof(SuccessAndErrorMessage))]
+        public async Task<IActionResult> ClearCellAssignment([FromBody] ClearCellAssignmentRequest request)
+        {
+            var result = await _instanceManagementRepository.ClearGridCellAssignment(_customerGuid.CustomerGUID, request.CellID);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("Grid/MyAssignedCells")]
+        [Produces(typeof(IEnumerable<string>))]
+        public async Task<IActionResult> GetMyAssignedCells([FromQuery] int worldServerID) 
+        {
+            var result = await _instanceManagementRepository.GetAssignedCellsForWorldServer(_customerGuid.CustomerGUID, worldServerID);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("Grid/GetServerForCell")]
+        [Produces(typeof(WorldServerInfoWithEndpoint))] 
+        public async Task<IActionResult> GetServerForCell([FromQuery] string cellID)
+        {
+            var result = await _instanceManagementRepository.GetWorldServerManagingCell(_customerGuid.CustomerGUID, cellID);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("Grid/GetServersForCells")]
+        [Produces(typeof(IEnumerable<WorldServerInfoWithEndpoint>))] 
+        public async Task<IActionResult> GetServersForCells([FromBody] GetServersForCellsRequest request)
+        {
+            var result = await _instanceManagementRepository.GetWorldServersForCells(_customerGuid.CustomerGUID, request.CellIDs);
+            return Ok(result);
+        }
+            
+        [HttpPost]
+        [Route("UpdateWorldServerS2SEndpoint")] 
+        [Produces(typeof(SuccessAndErrorMessage))]
+        public async Task<IActionResult> UpdateWorldServerS2SEndpoint([FromBody] UpdateWorldServerS2SEndpointRequest request)
+        {
+            var result = await _instanceManagementRepository.UpdateWorldServerS2SEndpoint(_customerGuid.CustomerGUID, request.WorldServerID, request.S2SEndpoint);
+            return Ok(result);
         }
     }
 }
